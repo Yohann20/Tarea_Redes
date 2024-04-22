@@ -1,0 +1,28 @@
+CC = g++
+CFLAGS = -std=c++11 -pthread
+
+SERVER_SRC = server.cpp
+CLIENT_SRC = client.cpp
+
+SERVER_OBJ = server.o
+CLIENT_OBJ = client.o
+
+SERVER_EXEC = server
+CLIENT_EXEC = client
+
+all: $(SERVER_EXEC) $(CLIENT_EXEC)
+
+$(SERVER_EXEC): $(SERVER_OBJ)
+	$(CC) $(CFLAGS) -o $(SERVER_EXEC) $(SERVER_OBJ)
+
+$(CLIENT_EXEC): $(CLIENT_OBJ)
+	$(CC) $(CFLAGS) -o $(CLIENT_EXEC) $(CLIENT_OBJ)
+
+$(SERVER_OBJ): $(SERVER_SRC)
+	$(CC) $(CFLAGS) -c $(SERVER_SRC)
+
+$(CLIENT_OBJ): $(CLIENT_SRC)
+	$(CC) $(CFLAGS) -c $(CLIENT_SRC)
+
+clean:
+	rm -f $(SERVER_OBJ) $(CLIENT_OBJ) $(SERVER_EXEC) $(CLIENT_EXEC)
