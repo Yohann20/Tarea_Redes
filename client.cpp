@@ -18,13 +18,15 @@ struct Move {
 
 // Función para visualizar el tablero
 void displayBoard(char board[ROWS][COLS]) {
+    cout << "TABLERO" << endl;
     for (int row = 0; row < ROWS; row++) {
         for (int col = 0; col < COLS; col++) {
             cout << board[row][col] << " ";
         }
         cout << endl;
     }
-    cout << endl;
+    cout << "-------------" << endl;
+    cout << "1 2 3 4 5 6 7" << endl;
 }
 
 int main(int argc, char *argv[]) {

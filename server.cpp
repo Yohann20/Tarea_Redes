@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <cstdlib>
 #include <ctime>
+#include <arpa/inet.h> // Agregar esta línea para usar inet_ntoa y ntohs
 
 using namespace std;
 
@@ -56,6 +57,7 @@ public:
 
     // Función para manejar las conexiones entrantes de los clientes
     void handleConnections() {
+        cout << "Esperando conexiones ..." << endl;
         while (true) {
             struct sockaddr_in clientAddr;
             socklen_t clientAddrLen = sizeof(clientAddr);
@@ -64,7 +66,7 @@ public:
                 cerr << "Error al aceptar la conexión del cliente" << endl;
                 continue;
             }
-            cout << "Cliente conectado" << endl;
+            cout << "Juego nuevo[" << inet_ntoa(clientAddr.sin_addr) << ":" << ntohs(clientAddr.sin_port) << "]" << endl;
             clientSockets.push_back(clientSocket);
 
             // Crear un hilo para manejar las acciones del cliente
@@ -86,6 +88,12 @@ public:
 
     // Función para jugar el juego con un cliente específico
     void playGame(int clientSocket) {
+        struct sockaddr_in clientAddr;
+        socklen_t clientAddrLen = sizeof(clientAddr);
+        getpeername(clientSocket, (struct sockaddr *)&clientAddr, &clientAddrLen);
+        cout << "Juego [" << inet_ntoa(clientAddr.sin_addr) << ":" << ntohs(clientAddr.sin_port) << "]: ";
+        cout << "inicia juego el " << (clientSockets.size() % 2 == 1 ? "cliente" : "servidor") << "." << endl;
+
         int player = clientSockets.size(); // ID del jugador
         srand(time(nullptr)); // Semilla para la selección aleatoria de la columna inicial
         int startingPlayer = rand() % 2 + 1; // Selección aleatoria del jugador que inicia
@@ -108,7 +116,7 @@ public:
 
                 // Validar y aplicar el movimiento
                 if (isValidMove(move)) {
-                    applyMove(move);
+                    applyMove(move, clientSocket);
                     // Verificar si hay un ganador
                     if (checkWinner()) {
                         // Enviar mensaje de fin del juego con el estado "ganador"
@@ -138,7 +146,7 @@ public:
                 } while (!isValidMove({randomColumn}));
 
                 // Aplicar el movimiento del servidor
-                applyMove({randomColumn});
+                applyMove({randomColumn}, clientSocket);
 
                 // Verificar si hay un ganador
                 if (checkWinner()) {
@@ -164,13 +172,18 @@ public:
         return (move.column >= 0 && move.column < COLS && board[0][move.column] == ' ');
     }
 
-    void applyMove(Move move) {
+    void applyMove(Move move, int clientSocket) {
         int row = ROWS - 1;
         while (board[row][move.column] != ' ' && row >= 0) {
             row--;
         }
         if (row >= 0) {
             board[row][move.column] = (currentPlayer == 1) ? 'X' : 'O';
+            struct sockaddr_in clientAddr;
+            socklen_t clientAddrLen = sizeof(clientAddr);
+            getpeername(clientSocket, (struct sockaddr *)&clientAddr, &clientAddrLen);
+            cout << "Juego [" << inet_ntoa(clientAddr.sin_addr) << ":" << ntohs(clientAddr.sin_port) << "]: ";
+            cout << (currentPlayer == 1 ? "cliente" : "servidor") << " juega columna " << move.column + 1 << "." << endl;
         }
     }
 
