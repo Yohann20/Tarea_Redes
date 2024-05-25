@@ -58,62 +58,36 @@ int main(int argc, char *argv[]) {
 
     char board[ROWS][COLS];
 
-    // Recibir indicación del servidor sobre quién comienza
-    int startingPlayer;
-    recv(clientSocket, &startingPlayer, sizeof(startingPlayer), 0);
-    cout << "El jugador " << startingPlayer << " comienza el juego." << endl;
+    // Recibir indicación del servidor sobre quién comienza 
+
+    int startingPlayer; 
+    recv(clientSocket, &startingPlayer, sizeof(startingPlayer), 0); 
+    //cout << "El jugador " << startingPlayer << " comienza el juego." << endl; 
+    //int currentPlayer = startingPlayer; 
+    
 
     // Inicializar el tablero
     memset(board, ' ', sizeof(board));
 
-    while (true) {
-        // Turno del servidor
-        if (startingPlayer == 2) {
-            // Recibir actualización del tablero desde el servidor
-            recv(clientSocket, &board, sizeof(board), 0);
-            displayBoard(board);
+    while (true) { 
+        
+        recv(clientSocket, &board, sizeof(board), 0); // Recibir el tablero actualizado
 
-            // Verificar resultado del juego
-            int winner;
-            if (recv(clientSocket, &winner, sizeof(winner), MSG_DONTWAIT) > 0) {
-                if (winner == 0) {
-                    cout << "¡Empate!" << endl;
-                } else {
-                    cout << "¡El jugador " << winner << " ha ganado!" << endl;
-                }
-                break;
-            }
-        } else {
-            // Turno del cliente
-            // Visualizar el tablero
-            displayBoard(board);
+        displayBoard(board);
 
-            // Esperar movimiento del cliente
-            cout << "Es tu turno (jugador 1). Ingresa el número de columna donde dejar caer tu ficha (0-6): ";
-            int column;
-            cin >> column;
+        // Turno del cliente
+        cout << "Es tu turno (jugador 1). Ingresa el número de columna donde dejar caer tu ficha (1-7): ";
+        int column;
+        cin >> column;
 
-            // Enviar movimiento al servidor
-            Move move;
-            move.column = column;
-            send(clientSocket, &move, sizeof(move), 0);
-
-            // Recibir actualización del tablero desde el servidor
-            recv(clientSocket, &board, sizeof(board), 0);
-
-            // Verificar resultado del juego
-            int winner;
-            if (recv(clientSocket, &winner, sizeof(winner), MSG_DONTWAIT) > 0) {
-                if (winner == 0) {
-                    cout << "¡Empate!" << endl;
-                } else {
-                    cout << "¡El jugador " << winner << " ha ganado!" << endl;
-                }
-                break;
-            }
-        }
+        Move move;
+        move.column = column - 1;
+        send(clientSocket, &move, sizeof(move), 0);
+            
+        
+            
     }
 
-    close(clientSocket);
-    return 0;
-}
+        close(clientSocket);
+        return 0;
+} 

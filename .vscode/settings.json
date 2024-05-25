@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "servidor": "c",
+        "iostream": "cpp",
+        "cliente": "c",
+        "ostream": "cpp"
+    }
+}
