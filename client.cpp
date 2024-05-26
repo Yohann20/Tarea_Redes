@@ -17,7 +17,7 @@ struct Move {
 };
 
 // Función para visualizar el tablero
-void displayBoard(char board[ROWS][COLS]) {
+void MostrarTablero(char board[ROWS][COLS]) {
     cout << "TABLERO" << endl;
     for (int row = 0; row < ROWS; row++) {
         for (int col = 0; col < COLS; col++) {
@@ -27,6 +27,11 @@ void displayBoard(char board[ROWS][COLS]) {
     }
     cout << "-------------" << endl;
     cout << "1 2 3 4 5 6 7" << endl;
+} 
+void receiveMessage(int clientSocket) {
+    char message[256];
+    recv(clientSocket, message, sizeof(message), 0);
+    cout << message << endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -56,35 +61,31 @@ int main(int argc, char *argv[]) {
 
     cout << "Conectado al servidor" << endl;
 
-    char board[ROWS][COLS];
+    char board[ROWS][COLS]; 
+    
 
-    // Recibir indicación del servidor sobre quién comienza 
-
-    int startingPlayer; 
-    recv(clientSocket, &startingPlayer, sizeof(startingPlayer), 0); 
-    //cout << "El jugador " << startingPlayer << " comienza el juego." << endl; 
-    //int currentPlayer = startingPlayer; 
+    
     
 
     // Inicializar el tablero
     memset(board, ' ', sizeof(board));
 
     while (true) { 
-        
         recv(clientSocket, &board, sizeof(board), 0); // Recibir el tablero actualizado
+        MostrarTablero(board);
 
-        displayBoard(board);
+        receiveMessage(clientSocket); // Recibir y mostrar mensaje del servidor
+    
 
-        // Turno del cliente
-        cout << "Es tu turno (jugador 1). Ingresa el número de columna donde dejar caer tu ficha (1-7): ";
+        
         int column;
         cin >> column;
 
         Move move;
         move.column = column - 1;
         send(clientSocket, &move, sizeof(move), 0);
-            
-        
+          
+    
             
     }
 

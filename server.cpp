@@ -52,7 +52,7 @@ public:
         }
 
         memset(board, ' ', sizeof(board));
-        //currentPlayer = 1;
+        
     }
 
     // Función para manejar las conexiones entrantes de los clientes
@@ -80,68 +80,69 @@ public:
     static void *handleClient(void *arg) {
         int clientSocket = *((int *)arg);
         Server server(0); // Creamos una instancia temporal del servidor para manejar al cliente
-        server.playGame(clientSocket);
+        server.Jugar(clientSocket);
         close(clientSocket);
         cout << "Cliente desconectado" << endl;
         return nullptr;
     }
 
     // Función para jugar el juego con un cliente específico
-    void playGame(int clientSocket) {
+    void Jugar(int clientSocket) {
         struct sockaddr_in clientAddr;
         socklen_t clientAddrLen = sizeof(clientAddr);
         getpeername(clientSocket, (struct sockaddr *)&clientAddr, &clientAddrLen);
         cout << "Juego [" << inet_ntoa(clientAddr.sin_addr) << ":" << ntohs(clientAddr.sin_port) << "]: ";
-        //cout << "inicia juego el " << (clientSockets.size() % 2 == 1 ? "cliente" : "servidor") << "." << endl;
         srand(time(nullptr)); // Semilla para la selección aleatoria de la columna inicial
         int startingPlayer = rand() % 2 + 1;   // Selección aleatoria del jugador que inicia
         cout << "inicia juego el " << (startingPlayer == 1 ? "cliente" : "servidor") << "." << endl;
-        
         currentPlayer = startingPlayer; 
-
-        send(clientSocket, &startingPlayer, sizeof(startingPlayer), 0);
-         
         if (startingPlayer == 2){ 
             MovimientoServidor(clientSocket); 
         }
         while (!isGameOver()) { 
                 // Turno del cliente
-                send(clientSocket, &board, sizeof(board), 0);
+                sendBoard(clientSocket);
+                sendMessage(clientSocket, "Es tu turno jugador Ingresa el número de columna donde dejaras caer tu ficha (1-7): ");
                 
                 Move move;
                 recv(clientSocket, &move, sizeof(move), 0);
 
                 if (isValidMove(move)) { 
                     currentPlayer = 1; 
-                    applyMove(move, clientSocket);
-                    if (checkWinner()) {
-                        int winner = 1;
-                        send(clientSocket, &winner, sizeof(winner), 0);
+                    Movimiento(move, clientSocket);
+                    if (VerificarGanador()) { 
+                        sendBoard(clientSocket);
+                        sendMessage(clientSocket, "¡Has ganado!");
+                        cout << "¡El cliente ha ganado!" << endl; 
                         break;
-                    } else if (isBoardFull()) {
-                        int draw = 0;
-                        send(clientSocket, &draw, sizeof(draw), 0);
+                    } else if (VerificarTablero()) {  
+                        sendBoard(clientSocket);
+                        sendMessage(clientSocket, "¡Empate!");
+                        cout << "¡Empate!" << endl;
                         break;
                     }
-                } else {
-                    int invalidMove = -1;
-                    send(clientSocket, &invalidMove, sizeof(invalidMove), 0);
+                } else { 
+                    sendBoard(clientSocket);
+                    sendMessage(clientSocket, "¡Movimiento invalido!");
+                    cout << "¡Movimiento invalido!" << endl;
+                    break;
                 } 
                 
                 // Turno del servidor 
                 currentPlayer = 2; 
                 MovimientoServidor(clientSocket);
                 
-                if (checkWinner()) {
-                    int winner = 2;
-                    send(clientSocket, &winner, sizeof(winner), 0);
+                if (VerificarGanador()) {
+                    sendBoard(clientSocket); 
+                    sendMessage(clientSocket, "¡El servidor a ganado!");
+                    cout << "¡El Servidor ha ganado!" << endl;
                     break;
-                } else if (isBoardFull()) {
-                    int draw = 0;
-                    send(clientSocket, &draw, sizeof(draw), 0);
+                } else if (VerificarTablero()) { 
+                    sendBoard(clientSocket);
+                    sendMessage(clientSocket, "¡Empate!");
+                    cout << "¡Empate!" << endl;
                     break;
-                } 
-                
+                }     
             
         }  
         close(clientSocket); 
@@ -153,8 +154,17 @@ public:
             randomColumn = rand() % COLS;
         } while (!isValidMove({randomColumn}));
 
-        applyMove({randomColumn}, clientSocket);
+        Movimiento({randomColumn}, clientSocket);
+    }  
+    void sendBoard(int clientSocket) {
+        send(clientSocket, &board, sizeof(board), 0);
     }
+
+    void sendMessage(int clientSocket, const string &message) {
+        send(clientSocket, message.c_str(), message.size() + 1, 0); // +1 to include null terminator
+    }
+
+    
 
     
 
@@ -163,7 +173,7 @@ public:
         return (move.column >= 0 && move.column < COLS && board[0][move.column] == ' ');
     } 
 
-    void applyMove(Move move, int clientSocket) {
+    void Movimiento(Move move, int clientSocket) {
         int row = ROWS - 1;
         while (board[row][move.column] != ' ' && row >= 0) {
             row--;
@@ -179,10 +189,10 @@ public:
     }
 
     bool isGameOver() {
-        return checkWinner() || isBoardFull();
+        return VerificarGanador() || VerificarTablero();
     }
 
-    bool checkWinner() {
+    bool VerificarGanador() {
     // Verificar horizontalmente
     for (int row = 0; row < ROWS; ++row) {
         for (int col = 0; col < COLS - 3; ++col) {
@@ -234,7 +244,7 @@ public:
     return false;
 }
 
-    bool isBoardFull() {
+    bool VerificarTablero() {
         for (int col = 0; col < COLS; col++) {
             if (board[0][col] == ' ') {
                 return false;
